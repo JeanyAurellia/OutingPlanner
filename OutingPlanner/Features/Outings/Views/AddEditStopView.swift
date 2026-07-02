@@ -16,7 +16,6 @@ struct AddEditStopView: View {
     private var existingStop: Stops?
     
     @State private var stopName: String
-    @State private var location: String
     @State private var budgetText: String
     @State private var notes: String
     @State private var selectedTime: Date
@@ -25,8 +24,7 @@ struct AddEditStopView: View {
         self.destination = destination
         self.existingStop = existingStop
         _stopName = State(initialValue: existingStop?.name ?? "")
-        _location = State(initialValue: existingStop?.location ?? "")
-        _budgetText = State(initialValue: existingStop.map { String($0.budget) } ?? "")
+        _budgetText = State(initialValue: existingStop?.budget == 0 ? "" : (existingStop.map { String($0.budget) } ?? ""))
         _notes = State(initialValue: existingStop?.notes ?? "")
         _selectedTime = State(initialValue: existingStop?.time ?? Date())
     }
@@ -35,7 +33,7 @@ struct AddEditStopView: View {
     
     var body: some View {
         ZStack {
-            Color.black
+            Color(UIColor.systemBackground)
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
@@ -52,9 +50,9 @@ struct AddEditStopView: View {
                     Button(action: { dismiss() }) {
                         Image(systemName: "xmark")
                             .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundColor(.primary)
                             .frame(width: 40, height: 40)
-                            .background(Color(white: 0.18))
+                            .background(Color(UIColor.tertiarySystemFill))
                             .clipShape(Circle())
                     }
                     
@@ -62,14 +60,14 @@ struct AddEditStopView: View {
                     
                     Text(isEditMode ? "Edit Stop" : "Add Stop")
                         .font(.headline)
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                     
                     Spacer()
                     
                     Button(action: { saveStop() }) {
                         Image(systemName: "checkmark")
                             .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundColor(.primary)
                             .frame(width: 40, height: 40)
                             .background(stopName.isEmpty ? Color.gray.opacity(0.3) : Color.blue)
                             .clipShape(Circle())
@@ -93,11 +91,11 @@ struct AddEditStopView: View {
                             
                             TextField("e.g. Mie Ayam", text: $stopName)
                                 .padding()
-                                .background(Color(white: 0.11))
+                                .background(Color(UIColor.secondarySystemBackground))
                                 .cornerRadius(12)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 12)
-                                        .stroke(Color(white: 0.2), lineWidth: 1)
+                                        .stroke(Color(UIColor.separator), lineWidth: 1)
                                 )
                         }
                         
@@ -110,43 +108,15 @@ struct AddEditStopView: View {
                             
                             HStack {
                                 Spacer()
-                                ZStack {
-                                    Text(selectedTime.formatted(date: .omitted, time: .shortened))
-                                        .font(.subheadline.weight(.medium))
-                                        .foregroundColor(.white)
-                                        .padding(.horizontal, 16)
-                                        .padding(.vertical, 10)
-                                        .background(Color(white: 0.16))
-                                        .cornerRadius(10)
-                                    
-                                    DatePicker("", selection: $selectedTime, displayedComponents: .hourAndMinute)
-                                        .datePickerStyle(.compact)
-                                        .labelsHidden()
-                                        .opacity(0.015)
-                                }
+                                DatePicker("", selection: $selectedTime, displayedComponents: .hourAndMinute)
+                                    .datePickerStyle(.compact)
+                                    .labelsHidden()
                             }
-                        }
-                        
-                        // LOCATION
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("LOCATION")
-                                .font(.caption)
-                                .bold()
-                                .foregroundColor(.secondary)
-                            
-                            TextField("e.g. Lantai 2", text: $location)
-                                .padding()
-                                .background(Color(white: 0.11))
-                                .cornerRadius(12)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(Color(white: 0.2), lineWidth: 1)
-                                )
                         }
                         
                         // BUDGET
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("BUDGET")
+                            Text("BUDGET (OPTIONAL)")
                                 .font(.caption)
                                 .bold()
                                 .foregroundColor(.secondary)
@@ -156,14 +126,14 @@ struct AddEditStopView: View {
                                     .foregroundColor(.secondary)
                                 TextField("0", text: $budgetText)
                                     .keyboardType(.numberPad)
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                             }
                             .padding()
-                            .background(Color(white: 0.11))
+                            .background(Color(UIColor.secondarySystemBackground))
                             .cornerRadius(12)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color(white: 0.2), lineWidth: 1)
+                                    .stroke(Color(UIColor.separator), lineWidth: 1)
                             )
                         }
                         
@@ -177,11 +147,11 @@ struct AddEditStopView: View {
                             TextField("Add a note", text: $notes, axis: .vertical)
                                 .lineLimit(3...6)
                                 .padding()
-                                .background(Color(white: 0.11))
+                                .background(Color(UIColor.secondarySystemBackground))
                                 .cornerRadius(12)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 12)
-                                        .stroke(Color(white: 0.2), lineWidth: 1)
+                                        .stroke(Color(UIColor.separator), lineWidth: 1)
                                 )
                         }
                     }
@@ -190,7 +160,6 @@ struct AddEditStopView: View {
             }
             .padding(.horizontal, 20)
         }
-        .environment(\.colorScheme, .dark)
     }
     
     private func saveStop() {
@@ -202,7 +171,7 @@ struct AddEditStopView: View {
                 existingStop,
                 name: stopName,
                 time: selectedTime,
-                location: location,
+                location: "",
                 notes: notes,
                 budget: budgetValue
             )
@@ -211,7 +180,7 @@ struct AddEditStopView: View {
                 to: destination,
                 name: stopName,
                 time: selectedTime,
-                location: location,
+                location: "",
                 notes: notes,
                 budget: budgetValue
             )
@@ -221,7 +190,7 @@ struct AddEditStopView: View {
 }
 
 #Preview {
-    let destination = Destination(name: "Blok M Square", category: "Mall")
+    let destination = Destination(name: "Blok M Square", purpose: "Mall")
     return AddEditStopView(destination: destination)
         .modelContainer(for: Outing.self, inMemory: true)
 }

@@ -12,15 +12,24 @@ struct AddOutingView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     
-    @State private var outingName = ""
-    @State private var selectedDate: Date? = nil
+    var existingOuting: Outing?
+    
+    @State private var outingName: String
+    @State private var selectedDate: Date?
     
     // State internal untuk menangani interaksi DatePicker native
-    @State private var internalDate = Date()
+    @State private var internalDate: Date
+    
+    init(existingOuting: Outing? = nil) {
+        self.existingOuting = existingOuting
+        _outingName = State(initialValue: existingOuting?.name ?? "")
+        _selectedDate = State(initialValue: existingOuting?.date)
+        _internalDate = State(initialValue: existingOuting?.date ?? Date())
+    }
     
     var body: some View {
         ZStack {
-            Color.black
+            Color(UIColor.systemBackground)
                 .ignoresSafeArea()
             
             VStack(spacing: 28) {
@@ -33,17 +42,17 @@ struct AddOutingView: View {
                     Button(action: { dismiss() }) {
                         Image(systemName: "xmark")
                             .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundColor(.primary)
                             .frame(width: 44, height: 44)
-                            .background(Color(white: 0.18))
+                            .background(Color(UIColor.tertiarySystemFill))
                             .clipShape(Circle())
                     }
                     
                     Spacer()
                     
-                    Text("Add Outing")
+                    Text(existingOuting != nil ? "Edit Outing" : "Add Outing")
                         .font(.headline)
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                     
                     Spacer()
                     
@@ -74,11 +83,11 @@ struct AddOutingView: View {
                         
                         TextField("Enter outing name", text: $outingName)
                             .padding()
-                            .background(Color(white: 0.11))
+                            .background(Color(UIColor.secondarySystemBackground))
                             .cornerRadius(12)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color(white: 0.2), lineWidth: 1)
+                                    .stroke(Color(UIColor.separator), lineWidth: 1)
                             )
                     }
                     
@@ -89,41 +98,30 @@ struct AddOutingView: View {
                             .bold()
                             .foregroundColor(.secondary)
                         
-                        ZStack {
-                            // Tampilan Kotak Sesuai Figma
-                            HStack {
-                                Text(selectedDate != nil ? formattedDate(selectedDate!) : "Select Date")
-                                    .font(.subheadline)
-                                    .foregroundColor(selectedDate != nil ? .white : .secondary)
-                                
-                                Spacer()
-                                
-                                Image(systemName: "calendar")
-                                    .foregroundColor(.secondary)
-                            }
-                            .padding()
-                            .background(Color(white: 0.11))
-                            .cornerRadius(12)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color(white: 0.2), lineWidth: 1)
-                            )
+                        HStack {
+                            Text(selectedDate != nil ? "Selected Date" : "Date")
+                                .font(.subheadline)
+                                .foregroundColor(selectedDate != nil ? .primary : .secondary)
                             
-                            // DatePicker Native Apple (.compact) diletakkan di paling depan
-                            // Menggunakan frame maksimum agar seluruh area kotak bisa di-klik secara pas
-                            DatePicker("", selection: $internalDate, displayedComponents: .date)
-                                .datePickerStyle(.compact)
-                                .labelsHidden()
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                .clipped()
-                                // Trik agar tampilan asli Apple tidak kelihatan, tapi sistem pop-up melayangnya tetap terpicu
-                                .opacity(0.015)
-                                .onChange(of: internalDate) { _, newValue in
-                                    // Begitu user tap tanggal di pop-up, tanggal ter-update dan otomatis menutup pop-up kalendernya
+                            Spacer()
+                            
+                            DatePicker("", selection: Binding(
+                                get: { selectedDate ?? Date() },
+                                set: { newValue in
                                     selectedDate = newValue
+                                    internalDate = newValue
                                 }
+                            ), displayedComponents: .date)
+                            .labelsHidden()
+                            .datePickerStyle(.compact)
                         }
-                        .frame(height: 52) // Mengunci tinggi area kotak input tanggal
+                        .padding()
+                        .background(Color(UIColor.secondarySystemBackground))
+                        .cornerRadius(12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color(UIColor.separator), lineWidth: 1)
+                        )
                     }
                 }
                 
@@ -132,19 +130,20 @@ struct AddOutingView: View {
             .padding(.horizontal, 20)
             .padding(.top, 16)
         }
-        .environment(\.colorScheme, .dark)
     }
     
     private func formattedDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .long // Hasilnya pas seperti mockup: "20 October 2026"
-        formatter.timeStyle = .none
-        return formatter.string(from: date)
+        return date.formatted(date: .long, time: .omitted)
     }
     
     private func saveOuting() {
-        let newOuting = Outing(name: outingName, date: selectedDate)
-        modelContext.insert(newOuting)
+        if let existingOuting {
+            existingOuting.name = outingName
+            existingOuting.date = selectedDate
+        } else {
+            let newOuting = Outing(name: outingName, date: selectedDate)
+            modelContext.insert(newOuting)
+        }
         dismiss()
     }
 }

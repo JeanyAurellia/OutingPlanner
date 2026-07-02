@@ -8,25 +8,35 @@
 import SwiftUI
 import SwiftData
 
-@main
+@main // <--- PASTIKAN DEKORATOR INI ADA DAN TIDAK TERHAPUS
 struct OutingPlannerApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
+    let container: ModelContainer
+    
+    init() {
+        let schema = Schema([Outing.self, Destination.self, Stops.self, BelongingList.self, BelongingItem.self, OutingBelongingItem.self])
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            container = try ModelContainer(for: schema, configurations: [])
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            print("Skema SwiftData berubah! Menghapus database lama...")
+            // Ambil URL database secara dinamis menggunakan ModelConfiguration
+            let config = ModelConfiguration(schema: schema)
+            let url = config.url
+            // Hapus 3 file bawaan SQLite untuk memastikan database benar-benar bersih
+            try? FileManager.default.removeItem(at: url)
+            try? FileManager.default.removeItem(at: url.deletingPathExtension().appendingPathExtension("store-shm"))
+            try? FileManager.default.removeItem(at: url.deletingPathExtension().appendingPathExtension("store-wal"))
+            do {
+                container = try ModelContainer(for: schema, configurations: config)
+            } catch {
+                fatalError("Gagal menginisialisasi ulang SwiftData Container: \(error)")
+            }
         }
-    }()
-
+    }
+    
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
         }
-        .modelContainer(sharedModelContainer)
+        .modelContainer(container)
     }
 }
