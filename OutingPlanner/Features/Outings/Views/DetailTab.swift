@@ -18,12 +18,12 @@ import SwiftData
 
 private enum DetailTab: String, CaseIterable {
     case itinerary = "Itenerary"
-    case packing = "Packing"
+    case belonging = "Belonging"
 }
 
 // Helper Identifiable kecil supaya navigationDestination(item:) bisa membawa
 // pasangan (destination, stop) sekaligus ke StopDetailView.
-private struct StopRoute: Identifiable {
+private struct StopRoute: Identifiable, Hashable {
     let destination: Destination
     let stop: Stops
     var id: UUID { stop.id }
@@ -41,6 +41,7 @@ struct DetailOutingView: View {
     @State private var selectedStopRoute: StopRoute?
     @State private var showEditOuting = false
     @State private var showDeleteConfirmation = false
+    @State private var showAttachSheet = false
     
     private var repository: OutingRepository {
         OutingRepository(modelContext: modelContext)
@@ -53,7 +54,6 @@ struct DetailOutingView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                header
                 
                 Text(outing.name)
                     .font(.largeTitle)
@@ -74,7 +74,7 @@ struct DetailOutingView: View {
                 if selectedTab == .itinerary {
                     itineraryContent
                 } else {
-                    packingContent
+                    belongingContent
                 }
             }
             .padding(.horizontal, 20)
@@ -82,9 +82,7 @@ struct DetailOutingView: View {
             .padding(.bottom, 24)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(Color.black)
-        .toolbarBackground(.hidden, for: .navigationBar)
-        .navigationBarBackButtonHidden(true)
+        .background(Color(UIColor.systemBackground))
         .sheet(isPresented: $showAddDestination) {
             AddDestinationView(outing: outing)
         }
@@ -94,69 +92,57 @@ struct DetailOutingView: View {
         .sheet(isPresented: $showEditOuting) {
             AddOutingView(existingOuting: outing)
         }
+        .sheet(isPresented: $showAttachSheet) {
+            AttachListSheet(outing: outing)
+        }
         .navigationDestination(item: $selectedStopRoute) { route in
             StopDetailView(destination: route.destination, stop: route.stop)
         }
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Menu {
+                    Button {
+                        showEditOuting = true
+                    } label: {
+                        Label("Edit Outing", systemImage: "square.and.pencil")
+                    }
+                    .tint(.primary)
+                    Button(role: .destructive) {
+                        showDeleteConfirmation = true
+                    } label: {
+                        Label("Delete Outing", systemImage: "trash")
+                            .tint(.red)
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                }
+            }
+        }
         .confirmationDialog(
-            "Hapus \(outing.name)?",
+            "Delete Outing?",
             isPresented: $showDeleteConfirmation,
             titleVisibility: .visible
         ) {
-            Button("Hapus Outing", role: .destructive) {
+            Button("Delete", role: .destructive) {
                 repository.deleteOuting(outing)
                 dismiss()
             }
-            Button("Batal", role: .cancel) {}
+            Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Semua destinasi dan stop di outing ini akan ikut terhapus.")
+            Text("Are you sure you want to delete '\(outing.name)'? Semua destinasi dan stop di outing ini akan ikut terhapus.")
         }
-        .environment(\.colorScheme, .dark)
-    }
+        }
     
     // ==========================================
-    // HEADER: back chevron — ... menu (Edit/Delete Outing)
+    // STATS ROW
     // ==========================================
-    private var header: some View {
-        HStack {
-            Button(action: { dismiss() }) {
-                Image(systemName: "chevron.left")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundColor(.white)
-                    .frame(width: 36, height: 36)
-                    .background(Color(white: 0.16))
-                    .clipShape(Circle())
-            }
-            
-            Spacer()
-            
-            Menu {
-                Button {
-                    showEditOuting = true
-                } label: {
-                    Label("Edit Outing", systemImage: "square.and.pencil")
-                }
-                Button(role: .destructive) {
-                    showDeleteConfirmation = true
-                } label: {
-                    Label("Delete Outing", systemImage: "trash")
-                }
-            } label: {
-                Image(systemName: "ellipsis")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundColor(.white)
-                    .frame(width: 36, height: 36)
-                    .background(Color(white: 0.16))
-                    .clipShape(Circle())
-            }
-        }
-        .padding(.top, 8)
-    }
-    
     private var statsRow: some View {
         HStack(spacing: 10) {
             statBox(label: "Destinasi", value: "\(outing.destinations.count)")
             statBox(label: "Stop", value: "\(totalStops)")
-            statBox(label: "Budget", value: Formatters.rupiahBig(outing.totalBudget))
+            statBox(label: "Budget", value: outing.totalBudget == 0 ? "Rp 0" : Formatters.rupiahBig(outing.totalBudget))
         }
     }
     
@@ -174,7 +160,7 @@ struct DetailOutingView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
-        .background(Color(white: 0.14))
+        .background(Color(UIColor.secondarySystemBackground))
         .cornerRadius(14)
     }
     
@@ -193,14 +179,14 @@ struct DetailOutingView: View {
                         .font(.subheadline.weight(.medium))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 9)
-                        .foregroundColor(.white)
-                        .background(selectedTab == tab ? Color(white: 0.32) : Color.clear)
+                        .foregroundColor(.primary)
+                        .background(selectedTab == tab ? Color(UIColor.systemFill) : Color.clear)
                         .clipShape(Capsule())
                 }
             }
         }
         .padding(4)
-        .background(Color(white: 0.12))
+        .background(Color(UIColor.tertiarySystemFill))
         .clipShape(Capsule())
     }
     
@@ -208,13 +194,9 @@ struct DetailOutingView: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Spacer()
-                Button {
+                PrimaryAddButton(title: "Add Destination") {
                     showAddDestination = true
-                } label: {
-                    Label("Add Destination", systemImage: "plus")
-                        .font(.subheadline.weight(.medium))
                 }
-                .tint(.blue)
             }
             
             if outing.destinations.isEmpty {
@@ -230,9 +212,6 @@ struct DetailOutingView: View {
                             destination: destination,
                             onToggleStopChecked: { stop in
                                 repository.toggleStopChecked(stop)
-                            },
-                            onTapStop: { stop in
-                                selectedStopRoute = StopRoute(destination: destination, stop: stop)
                             },
                             onDeleteStop: { stop in
                                 repository.deleteStop(stop, from: destination)
@@ -250,45 +229,106 @@ struct DetailOutingView: View {
         }
     }
     
-    private var packingContent: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            if outing.packingItems.isEmpty {
-                Text("Belum ada packing list untuk outing ini.")
+    // MARK: - BELONGING CONTENT
+    private var belongingContent: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Spacer()
+                PrimaryAddButton(title: "Attach List") {
+                    showAttachSheet = true
+                }
+            }
+            
+            if outing.belongingItems.isEmpty {
+                Text("Belum ada belonging list untuk outing ini.")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.top, 40)
             } else {
-                VStack(spacing: 12) {
-                    ForEach(outing.packingItems) { item in
-                        Button {
-                            item.isChecked.toggle()
-                            try? modelContext.save()
-                        } label: {
-                            HStack(spacing: 10) {
-                                Image(systemName: item.isChecked ? "checkmark.circle.fill" : "circle")
-                                    .foregroundColor(item.isChecked ? .blue : .secondary)
-                                Text(item.name)
+                let groupedItems = Dictionary(grouping: outing.belongingItems, by: { $0.categoryName })
+                let sortedCategories = groupedItems.keys.sorted { cat1, cat2 in
+                    if cat1 == "Everyday Carry" { return true }
+                    if cat2 == "Everyday Carry" { return false }
+                    return cat1 < cat2
+                }
+                
+                VStack(spacing: 16) {
+                    ForEach(sortedCategories, id: \.self) { category in
+                        let items = groupedItems[category] ?? []
+                        let checkedCount = items.filter { $0.isChecked }.count
+                        
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack {
+                                Text(category)
+                                    .font(.headline)
                                     .foregroundColor(.primary)
-                                    .strikethrough(item.isChecked, color: .secondary)
-                                    .opacity(item.isChecked ? 0.5 : 1)
                                 Spacer()
+                                Text("\(checkedCount)/\(items.count)")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
                             }
-                            .padding()
-                            .background(Color(white: 0.11))
-                            .cornerRadius(12)
+                            
+                            ForEach(items.sorted { $0.name < $1.name }) { item in
+                                Button {
+                                    item.isChecked.toggle()
+                                    try? modelContext.save()
+                                } label: {
+                                    HStack(spacing: 12) {
+                                        Image(systemName: item.isChecked ? "checkmark.circle.fill" : "circle")
+                                            .font(.title3)
+                                            .foregroundColor(item.isChecked ? .blue : .secondary)
+                                        Text(item.name)
+                                            .font(.subheadline)
+                                            .foregroundColor(.primary)
+                                            .strikethrough(item.isChecked, color: .secondary)
+                                            .opacity(item.isChecked ? 0.5 : 1)
+                                        Spacer()
+                                    }
+                                }
+                                .buttonStyle(.plain)
+                            }
                         }
-                        .buttonStyle(.plain)
+                        .padding()
+                        .background(Color(UIColor.secondarySystemBackground))
+                        .cornerRadius(16)
                     }
                 }
             }
         }
+        .onAppear {
+            seedEverydayCarryForOutingIfNeeded()
+        }
+    }
+    
+    private func seedEverydayCarryForOutingIfNeeded() {
+        let hasEverydayCarry = outing.belongingItems.contains { $0.categoryName == "Everyday Carry" }
+        guard !hasEverydayCarry else { return }
+        
+        let descriptor = FetchDescriptor<BelongingList>(predicate: #Predicate { $0.name == "Everyday Carry" })
+        if let edc = try? modelContext.fetch(descriptor).first {
+            for item in edc.items {
+                let newItem = OutingBelongingItem(name: item.name, isChecked: false, categoryName: "Everyday Carry")
+                outing.belongingItems.append(newItem)
+            }
+            try? modelContext.save()
+        } else {
+            let edc = BelongingList(name: "Everyday Carry", iconName: "briefcase")
+            modelContext.insert(edc)
+            let items = ["Dompet", "Kunci Kendaraan", "Handphone", "Charger/Powerbank", "Air Minum", "Tisu"]
+            for itemName in items {
+                let templateItem = BelongingItem(name: itemName)
+                edc.items.append(templateItem)
+                
+                let newItem = OutingBelongingItem(name: itemName, isChecked: false, categoryName: "Everyday Carry")
+                outing.belongingItems.append(newItem)
+            }
+            try? modelContext.save()
+        }
     }
     
     private func formattedDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "d MMMM yyyy"
-        return formatter.string(from: date)
+        return date.formatted(date: .long, time: .omitted)
     }
 }
 
@@ -303,13 +343,13 @@ struct DetailOutingView: View {
         let dateBlokM = calendar.date(from: DateComponents(year: 2026, month: 6, day: 17))!
         let outing = Outing(name: "Jalan-jalan ke Blok M", date: dateBlokM)
         
-        let dest1 = Destination(name: "Blok M Square", category: "Mall")
+        let dest1 = Destination(name: "Blok M Square", purpose: "Mall")
         let stop1 = Stops(name: "Bakmi GM", time: calendar.date(bySettingHour: 12, minute: 0, second: 0, of: Date())!, location: "Lantai 2", notes: "Beli Bakmi goreng spesial", budget: 60_000, isChecked: true)
         let stop2 = Stops(name: "Gramedia", time: calendar.date(bySettingHour: 14, minute: 0, second: 0, of: Date())!, location: "Lantai 3", notes: "Beli buku tereliye", budget: 90_000)
         let stop3 = Stops(name: "J.CO Donuts", time: calendar.date(bySettingHour: 16, minute: 0, second: 0, of: Date())!, location: "Lantai 1", notes: "", budget: 50_000)
         dest1.stops = [stop1, stop2, stop3]
         
-        let dest2 = Destination(name: "Blok M Plaza", category: "Kuliner")
+        let dest2 = Destination(name: "Blok M Plaza", purpose: "Kuliner")
         let stop4 = Stops(name: "Es Teler 77", time: calendar.date(bySettingHour: 15, minute: 30, second: 0, of: Date())!, location: "Lantai 1", notes: "", budget: 100_000)
         dest2.stops = [stop4]
         

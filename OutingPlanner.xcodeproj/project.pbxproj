@@ -35,16 +35,6 @@
 			path = OutingPlanner;
 			sourceTree = "<group>";
 		};
-		4E728DA92FE2D5A8005E4D50 /* OutingPlannerTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = OutingPlannerTests;
-			sourceTree = "<group>";
-		};
-		4E728DB32FE2D5A8005E4D50 /* OutingPlannerUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = OutingPlannerUITests;
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -76,8 +66,6 @@
 			isa = PBXGroup;
 			children = (
 				4E728D992FE2D5A7005E4D50 /* OutingPlanner */,
-				4E728DA92FE2D5A8005E4D50 /* OutingPlannerTests */,
-				4E728DB32FE2D5A8005E4D50 /* OutingPlannerUITests */,
 				4E728D982FE2D5A7005E4D50 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -130,9 +118,6 @@
 			dependencies = (
 				4E728DA82FE2D5A8005E4D50 /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				4E728DA92FE2D5A8005E4D50 /* OutingPlannerTests */,
-			);
 			name = OutingPlannerTests;
 			packageProductDependencies = (
 			);
@@ -152,9 +137,6 @@
 			);
 			dependencies = (
 				4E728DB22FE2D5A8005E4D50 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				4E728DB32FE2D5A8005E4D50 /* OutingPlannerUITests */,
 			);
 			name = OutingPlannerUITests;
 			packageProductDependencies = (

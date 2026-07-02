@@ -12,16 +12,17 @@ import SwiftData
 final class Destination {
     @Attribute(.unique) var id: UUID
     var name: String
-    var category: String
+    var purpose: String
+    var time: Date?
     var outing: Outing? // Back-reference ke Outing
     
     // Relasi One-to-Many ke Stop
     @Relationship(deleteRule: .cascade, inverse: \Stops.destination)
     var stops: [Stops] = []
     
-    init(id: UUID = UUID(), name: String, category: String) {
+    init(id: UUID = UUID(), name: String, purpose: String) {
         self.id = id
         self.name = name
-        self.category = category
+        self.purpose = purpose
     }
 }

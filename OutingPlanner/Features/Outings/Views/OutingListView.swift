@@ -8,6 +8,11 @@
 import SwiftUI
 import SwiftData
 
+enum OutingListFilter: Hashable {
+    case upcoming
+    case draft
+}
+
 struct OutingListView: View {
     @Query var allOutings: [Outing]
     @Environment(\.modelContext) private var modelContext
@@ -28,42 +33,18 @@ struct OutingListView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 48) {
-                    
-                    // ==========================================
-                    // FIXED SEJAJAR: CUSTOM HEADER (ANTI TERPOTONG)
-                    // ==========================================
-                    HStack(alignment: .center) {
-                        Text("Outing")
-                            .font(.largeTitle)
-                            .bold()
-                            .foregroundColor(.primary)
-                        
-                        Spacer()
-                        
-                        // Tombol Bulat Biru Sejajar Horizontal Sempurna
-                        
-                        Button(action: { showAddOuting.toggle() }) {
-                            Image(systemName: "plus")
-                                .font(.body).bold()
-                                .foregroundColor(.white)
-                                .buttonStyle(.borderedProminent)
-                                .buttonBorderShape(.circle)
-                                .tint(.blue)
-                        }
-                    }
-                    
+                VStack(spacing: 32) {
                     // SECTION: UPCOMING
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
                             Text("UPCOMING")
-                                .font(.subheadline)
-                                .bold()
+                                .font(.subheadline.weight(.bold))
                                 .foregroundColor(.secondary)
                             Spacer()
-                            Button("See All") { }
-                                .font(.subheadline)
-                                .foregroundColor(.primary)
+                            NavigationLink(value: OutingListFilter.upcoming) {
+                                Text("See All")
+                                    .font(.subheadline)
+                            }
                         }
                         
                         if upcomingOutings.isEmpty {
@@ -74,7 +55,10 @@ struct OutingListView: View {
                             VStack(spacing: 12) {
                                 ForEach(0..<upcomingOutings.count, id: \.self) { index in
                                     let outing = upcomingOutings[index]
-                                    OutingCard(outing: outing, isFirstUpcoming: index == 0)
+                                    NavigationLink(value: outing) {
+                                        OutingCard(outing: outing, isFirstUpcoming: index == 0)
+                                    }
+                                    .buttonStyle(.plain)
                                 }
                             }
                         }
@@ -84,13 +68,13 @@ struct OutingListView: View {
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
                             Text("DRAFT")
-                                .font(.subheadline)
-                                .bold()
+                                .font(.subheadline.weight(.bold))
                                 .foregroundColor(.secondary)
                             Spacer()
-                            Button("See All") { }
-                                .font(.subheadline)
-                                .foregroundColor(.primary)
+                            NavigationLink(value: OutingListFilter.draft) {
+                                Text("See All")
+                                    .font(.subheadline)
+                            }
                         }
                         
                         if draftOutings.isEmpty {
@@ -100,20 +84,40 @@ struct OutingListView: View {
                         } else {
                             VStack(spacing: 12) {
                                 ForEach(draftOutings) { outing in
-                                    OutingCard(outing: outing, isFirstUpcoming: false)
+                                    NavigationLink(value: outing) {
+                                        OutingCard(outing: outing, isFirstUpcoming: false)
+                                    }
+                                    .buttonStyle(.plain)
                                 }
                             }
                         }
                     }
                 }
-                .padding(.horizontal)
+                .padding()
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.black)
-            // Menyembunyikan total top bar bawaan iOS agar tidak bertabrakan secara vertikal
-            .toolbarBackground(.hidden, for: .navigationBar)
+            .navigationTitle("Outing")
+            .toolbarTitleDisplayMode(.inlineLarge)
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    PrimaryAddButton { showAddOuting = true }
+                    
+                }
+            }
+            .sheet(isPresented: $showAddOuting) {
+                AddOutingView()
+            }
+            .navigationDestination(for: Outing.self) { outing in
+                DetailOutingView(outing: outing)
+            }
+            .navigationDestination(for: OutingListFilter.self) { filter in
+                switch filter {
+                case .upcoming:
+                    UpcomingOutingsView()
+                case .draft:
+                    DraftOutingsView()
+                }
+            }
         }
-        .environment(\.colorScheme, .dark)
     }
 }
 
@@ -128,7 +132,7 @@ struct OutingListView: View {
         
         let dateBlokM = calendar.date(from: DateComponents(year: 2026, month: 6, day: 17))!
         let outing1 = Outing(name: "Jalan-jalan ke Blok M", date: dateBlokM)
-        let dest1 = Destination(name: "Blok M Plaza", category: "Mall")
+        let dest1 = Destination(name: "Blok M Plaza", purpose: "Mall")
         dest1.stops = [Stops(name: "Foodcourt", time: Date(), location: "Lantai 5", notes: "Beli bakmi", budget: 50000),
                        Stops(name: "Kopi Kenangan", time: Date(), location: "Lantai UG", notes: "Kopi susu", budget: 25000)]
         outing1.destinations.append(dest1)
