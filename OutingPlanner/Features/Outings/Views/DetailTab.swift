@@ -1,12 +1,4 @@
 //
-//  DetailTab.swift
-//  OutingPlanner
-//
-//  Created by Jeany Aurellia on 18/06/26.
-//
-
-
-//
 //  DetailOutingView.swift
 //  OutingPlanner
 //
@@ -17,60 +9,44 @@ import SwiftUI
 import SwiftData
 
 private enum DetailTab: String, CaseIterable {
-    case itinerary = "Itenerary"
+    case itinerary = "Itinerary"
     case belonging = "Belonging"
-}
-
-// Helper Identifiable kecil supaya navigationDestination(item:) bisa membawa
-// pasangan (destination, stop) sekaligus ke StopDetailView.
-private struct StopRoute: Identifiable, Hashable {
-    let destination: Destination
-    let stop: Stops
-    var id: UUID { stop.id }
 }
 
 struct DetailOutingView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    
+
     @Bindable var outing: Outing
-    
+
     @State private var selectedTab: DetailTab = .itinerary
     @State private var showAddDestination = false
-    @State private var addStopTarget: Destination?
-    @State private var selectedStopRoute: StopRoute?
     @State private var showEditOuting = false
     @State private var showDeleteConfirmation = false
     @State private var showAttachSheet = false
-    
+
     private var repository: OutingRepository {
         OutingRepository(modelContext: modelContext)
     }
-    
-    private var totalStops: Int {
-        outing.destinations.flatMap { $0.stops }.count
-    }
-    
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                
                 Text(outing.name)
                     .font(.largeTitle)
                     .bold()
                     .foregroundColor(.primary)
                     .padding(.top, 4)
-                
-                if let date = outing.date {
+
+                if let date = outing.eventStartDate ?? outing.date {
                     Text(formattedDate(date))
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
-                
+
                 statsRow
-                
                 tabPicker
-                
+
                 if selectedTab == .itinerary {
                     itineraryContent
                 } else {
@@ -86,17 +62,11 @@ struct DetailOutingView: View {
         .sheet(isPresented: $showAddDestination) {
             AddDestinationView(outing: outing)
         }
-        .sheet(item: $addStopTarget) { destination in
-            AddEditStopView(destination: destination)
-        }
         .sheet(isPresented: $showEditOuting) {
             AddOutingView(existingOuting: outing)
         }
         .sheet(isPresented: $showAttachSheet) {
             AttachListSheet(outing: outing)
-        }
-        .navigationDestination(item: $selectedStopRoute) { route in
-            StopDetailView(destination: route.destination, stop: route.stop)
         }
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -107,6 +77,7 @@ struct DetailOutingView: View {
                         Label("Edit Outing", systemImage: "square.and.pencil")
                     }
                     .tint(.primary)
+
                     Button(role: .destructive) {
                         showDeleteConfirmation = true
                     } label: {
@@ -131,21 +102,18 @@ struct DetailOutingView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Are you sure you want to delete '\(outing.name)'? Semua destinasi dan stop di outing ini akan ikut terhapus.")
+            Text("Are you sure you want to delete '\(outing.name)'? Semua destinasi di outing ini akan ikut terhapus.")
         }
-        }
-    
-    // ==========================================
-    // STATS ROW
-    // ==========================================
+    }
+
     private var statsRow: some View {
         HStack(spacing: 10) {
             statBox(label: "Destinasi", value: "\(outing.destinations.count)")
-            statBox(label: "Stop", value: "\(totalStops)")
+            statBox(label: "Selesai", value: "\(outing.destinations.filter { $0.isChecked }.count)")
             statBox(label: "Budget", value: outing.totalBudget == 0 ? "Rp 0" : Formatters.rupiahBig(outing.totalBudget))
         }
     }
-    
+
     private func statBox(label: String, value: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label)
@@ -163,10 +131,7 @@ struct DetailOutingView: View {
         .background(Color(UIColor.secondarySystemBackground))
         .cornerRadius(14)
     }
-    
-    // ==========================================
-    // SEGMENTED CONTROL: Itenerary | Packing
-    // ==========================================
+
     private var tabPicker: some View {
         HStack(spacing: 4) {
             ForEach(DetailTab.allCases, id: \.self) { tab in
@@ -189,7 +154,7 @@ struct DetailOutingView: View {
         .background(Color(UIColor.tertiarySystemFill))
         .clipShape(Capsule())
     }
-    
+
     private var itineraryContent: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
@@ -198,7 +163,7 @@ struct DetailOutingView: View {
                     showAddDestination = true
                 }
             }
-            
+
             if outing.destinations.isEmpty {
                 Text("Belum ada destinasi. Tap \"Add Destination\" untuk menambahkan.")
                     .font(.subheadline)
@@ -206,18 +171,14 @@ struct DetailOutingView: View {
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.top, 40)
             } else {
-                VStack(spacing: 16) {
-                    ForEach(outing.destinations) { destination in
+                let sortedDestinations = outing.destinations.sorted { $0.time < $1.time }
+                VStack(spacing: 14) {
+                    ForEach(Array(sortedDestinations.enumerated()), id: \.element.id) { index, destination in
                         DestinationCard(
                             destination: destination,
-                            onToggleStopChecked: { stop in
-                                repository.toggleStopChecked(stop)
-                            },
-                            onDeleteStop: { stop in
-                                repository.deleteStop(stop, from: destination)
-                            },
-                            onAddStop: {
-                                addStopTarget = destination
+                            isLast: index == sortedDestinations.count - 1,
+                            onToggleChecked: {
+                                repository.toggleDestinationChecked(destination)
                             },
                             onDeleteDestination: {
                                 repository.deleteDestination(destination, from: outing)
@@ -228,8 +189,7 @@ struct DetailOutingView: View {
             }
         }
     }
-    
-    // MARK: - BELONGING CONTENT
+
     private var belongingContent: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
@@ -238,7 +198,7 @@ struct DetailOutingView: View {
                     showAttachSheet = true
                 }
             }
-            
+
             if outing.belongingItems.isEmpty {
                 Text("Belum ada belonging list untuk outing ini.")
                     .font(.subheadline)
@@ -252,12 +212,12 @@ struct DetailOutingView: View {
                     if cat2 == "Everyday Carry" { return false }
                     return cat1 < cat2
                 }
-                
+
                 VStack(spacing: 16) {
                     ForEach(sortedCategories, id: \.self) { category in
                         let items = groupedItems[category] ?? []
                         let checkedCount = items.filter { $0.isChecked }.count
-                        
+
                         VStack(alignment: .leading, spacing: 12) {
                             HStack {
                                 Text(category)
@@ -268,7 +228,7 @@ struct DetailOutingView: View {
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
                             }
-                            
+
                             ForEach(items.sorted { $0.name < $1.name }) { item in
                                 Button {
                                     item.isChecked.toggle()
@@ -300,11 +260,11 @@ struct DetailOutingView: View {
             seedEverydayCarryForOutingIfNeeded()
         }
     }
-    
+
     private func seedEverydayCarryForOutingIfNeeded() {
         let hasEverydayCarry = outing.belongingItems.contains { $0.categoryName == "Everyday Carry" }
         guard !hasEverydayCarry else { return }
-        
+
         let descriptor = FetchDescriptor<BelongingList>(predicate: #Predicate { $0.name == "Everyday Carry" })
         if let edc = try? modelContext.fetch(descriptor).first {
             for item in edc.items {
@@ -319,45 +279,58 @@ struct DetailOutingView: View {
             for itemName in items {
                 let templateItem = BelongingItem(name: itemName)
                 edc.items.append(templateItem)
-                
+
                 let newItem = OutingBelongingItem(name: itemName, isChecked: false, categoryName: "Everyday Carry")
                 outing.belongingItems.append(newItem)
             }
             try? modelContext.save()
         }
     }
-    
+
     private func formattedDate(_ date: Date) -> String {
-        return date.formatted(date: .long, time: .omitted)
+        return date.formatted(date: .long, time: .shortened)
     }
 }
 
-// ==========================================
-// PREVIEW GENERATOR (SWIFTDATA)
-// ==========================================
 #Preview {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container: ModelContainer = {
-        let container = try! ModelContainer(for: Outing.self, Destination.self, Stops.self, configurations: config)
+        let container = try! ModelContainer(for: Outing.self, Destination.self, configurations: config)
         let calendar = Calendar.current
         let dateBlokM = calendar.date(from: DateComponents(year: 2026, month: 6, day: 17))!
         let outing = Outing(name: "Jalan-jalan ke Blok M", date: dateBlokM)
-        
-        let dest1 = Destination(name: "Blok M Square", purpose: "Mall")
-        let stop1 = Stops(name: "Bakmi GM", time: calendar.date(bySettingHour: 12, minute: 0, second: 0, of: Date())!, location: "Lantai 2", notes: "Beli Bakmi goreng spesial", budget: 60_000, isChecked: true)
-        let stop2 = Stops(name: "Gramedia", time: calendar.date(bySettingHour: 14, minute: 0, second: 0, of: Date())!, location: "Lantai 3", notes: "Beli buku tereliye", budget: 90_000)
-        let stop3 = Stops(name: "J.CO Donuts", time: calendar.date(bySettingHour: 16, minute: 0, second: 0, of: Date())!, location: "Lantai 1", notes: "", budget: 50_000)
-        dest1.stops = [stop1, stop2, stop3]
-        
-        let dest2 = Destination(name: "Blok M Plaza", purpose: "Kuliner")
-        let stop4 = Stops(name: "Es Teler 77", time: calendar.date(bySettingHour: 15, minute: 30, second: 0, of: Date())!, location: "Lantai 1", notes: "", budget: 100_000)
-        dest2.stops = [stop4]
-        
-        outing.destinations = [dest1, dest2]
+
+        let dest1 = Destination(
+            name: "Blok M Square",
+            purpose: "Mall",
+            time: calendar.date(bySettingHour: 12, minute: 0, second: 0, of: Date())!,
+            location: "Lantai 2",
+            notes: "Beli Bakmi goreng spesial",
+            budget: 60_000,
+            isChecked: true
+        )
+        let dest2 = Destination(
+            name: "Gramedia",
+            purpose: "Mall",
+            time: calendar.date(bySettingHour: 14, minute: 0, second: 0, of: Date())!,
+            location: "Lantai 3",
+            notes: "Beli buku tereliye",
+            budget: 90_000
+        )
+        let dest3 = Destination(
+            name: "J.CO Donuts",
+            purpose: "Food",
+            time: calendar.date(bySettingHour: 16, minute: 0, second: 0, of: Date())!,
+            location: "Lantai 1",
+            notes: "",
+            budget: 50_000
+        )
+
+        outing.destinations = [dest1, dest2, dest3]
         container.mainContext.insert(outing)
         return container
     }()
-    
+
     return NavigationStack {
         DetailOutingView(outing: {
             let descriptor = FetchDescriptor<Outing>()

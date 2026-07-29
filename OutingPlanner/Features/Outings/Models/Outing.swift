@@ -12,21 +12,37 @@ import SwiftData
 final class Outing {
     @Attribute(.unique) var id: UUID
     var name: String
-    var date: Date? // Sudah benar opsional
+    var date: Date?
     var createdAt: Date = Date()
     var belongingListID: UUID?
-    
+
     @Relationship(deleteRule: .cascade, inverse: \Destination.outing)
     var destinations: [Destination] = []
-    
+
     @Relationship(deleteRule: .cascade, inverse: \OutingBelongingItem.outing)
     var belongingItems: [OutingBelongingItem] = []
-    
+
     var totalBudget: Int {
-        destinations.flatMap { $0.stops }.reduce(0) { $0 + $1.budget }
+        destinations.reduce(0) { $0 + $1.budget }
     }
-    
-    // PERBAIKAN: Ubah 'date: Date' menjadi 'date: Date? = nil'
+
+    var eventStartDate: Date? {
+        guard let date, let firstDestination = destinations.sorted(by: { $0.time < $1.time }).first else {
+            return date
+        }
+
+        let calendar = Calendar.current
+        let dateComponents = calendar.dateComponents([.year, .month, .day], from: date)
+        let timeComponents = calendar.dateComponents([.hour, .minute], from: firstDestination.time)
+        var mergedComponents = DateComponents()
+        mergedComponents.year = dateComponents.year
+        mergedComponents.month = dateComponents.month
+        mergedComponents.day = dateComponents.day
+        mergedComponents.hour = timeComponents.hour
+        mergedComponents.minute = timeComponents.minute
+        return calendar.date(from: mergedComponents)
+    }
+
     init(id: UUID = UUID(), name: String, date: Date? = nil, createdAt: Date = Date(), belongingListID: UUID? = nil) {
         self.id = id
         self.name = name

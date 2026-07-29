@@ -6,66 +6,30 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct DestinationCard: View {
+    @Environment(\.modelContext) private var modelContext
     @Bindable var destination: Destination
-    var onToggleStopChecked: (Stops) -> Void
-    var onDeleteStop: (Stops) -> Void
-    var onAddStop: () -> Void
+    var isLast: Bool = false
+    var onToggleChecked: () -> Void
     var onDeleteDestination: () -> Void
 
-    // Tap di header untuk expand/collapse hanya hiasan navigasi lokal,
-    // jadi cukup disimpan sebagai state lokal kartu ini.
-    @State private var isExpanded: Bool = false
-    // Mode edit: memunculkan tong sampah di setiap stop + di destinasi,
-    // dan mengganti tombol pensil menjadi tombol Done.
-    @State private var isEditing: Bool = false
+    @State private var isEditing = false
     @State private var showDeleteConfirmation = false
-    @State private var stopToDelete: Stops?
 
-
-
-    private var totalBudget: Int {
-        destination.stops.reduce(0) { $0 + $1.budget }
-    }
+    private let purposes = ["Mall", "Food", "Sport", "Museum", "Others"]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            header
-
-            if isExpanded {
-                Divider()
-                    .padding(.vertical, 12)
-
-                VStack(spacing: 14) {
-                    let sortedStops = destination.stops.sorted(by: { $0.time < $1.time })
-                    ForEach(Array(sortedStops.enumerated()), id: \.element.id) { index, stop in
-                        StopCard(
-                            stop: stop,
-                            isEditing: isEditing,
-                            isLast: index == sortedStops.count - 1,
-                            onToggleChecked: { onToggleStopChecked(stop) },
-                            onDelete: { stopToDelete = stop }
-                        )
-                    }
-
-                    HStack {
-                        Button(action: {
-                            onAddStop()
-                        }) {
-                            Label("Add Stop", systemImage: "plus.square")
-                                .font(.body)
-                        }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(.blue)
-                        Spacer()
-                    }
-                }
-            }
+        HStack(alignment: .center, spacing: 10) {
+            timelineMarker
+            content
+            editControls
         }
         .padding(16)
         .background(Color(UIColor.secondarySystemBackground))
         .cornerRadius(16)
+        .animation(.snappy(duration: 0.2), value: isEditing)
         .confirmationDialog(
             "Delete Destination?",
             isPresented: $showDeleteConfirmation,
@@ -76,166 +40,202 @@ struct DestinationCard: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Are you sure you want to delete '\(destination.name)'? Semua stop di dalam destinasi ini akan ikut terhapus.")
+            Text("Are you sure you want to delete '\(destination.name)'?")
         }
-        .confirmationDialog(
-            "Delete Stop?",
-            isPresented: Binding(
-                get: { stopToDelete != nil },
-                set: { if !$0 { stopToDelete = nil } }
-            ),
-            titleVisibility: .visible
-        ) {
-            Button("Delete", role: .destructive) {
-                if let stop = stopToDelete {
-                    onDeleteStop(stop)
-                }
-                stopToDelete = nil
+    }
+
+    private var timelineMarker: some View {
+        VStack(spacing: 3) {
+            Button(action: onToggleChecked) {
+                Image(systemName: destination.isChecked ? "checkmark.circle.fill" : "circle")
+                    .font(.title3)
+                    .foregroundColor(destination.isChecked ? .blue : .secondary)
             }
-            Button("Cancel", role: .cancel) {
-                stopToDelete = nil
-            }
-        } message: {
-            if let stop = stopToDelete {
-                Text("Are you sure you want to delete '\(stop.name)'?")
+            .buttonStyle(.plain)
+
+            if !isLast {
+                Image(systemName: "ellipsis")
+                    .rotationEffect(.degrees(90))
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundColor(.secondary.opacity(0.6))
+                    .allowsHitTesting(false)
             }
         }
     }
 
-    private var header: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Button {
-                guard !isEditing else { return }
-                withAnimation(.snappy(duration: 0.2)) {
-                    isExpanded.toggle()
-                }
-            } label: {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 8) {
-                        if isEditing {
-                            TextField("Destination Name", text: $destination.name)
-                                .font(.headline)
-                                .bold()
-                                .textFieldStyle(.roundedBorder)
-                        } else {
-                            Text(destination.name)
-                                .font(.headline)
-                                .foregroundColor(.primary)
-                        }
+    private var content: some View {
+        HStack(alignment: .center, spacing: 8) {
+            VStack(alignment: .leading, spacing: 5) {
+                if isEditing {
+                    TextField("Destination Name", text: $destination.name)
+                        .font(.subheadline.weight(.medium))
+                        .textFieldStyle(.roundedBorder)
 
-                        if isEditing {
-                            Menu {
-                                ForEach(["Mall", "Food", "Sport", "Museum", "Others"], id: \.self) { purpose in
-                                    Button(purpose) {
-                                        destination.purpose = purpose
-                                    }
-                                }
-                            } label: {
-                                HStack(spacing: 4) {
-                                    Text(destination.purpose.isEmpty ? "Select Purpose" : destination.purpose)
-                                    Image(systemName: "chevron.up.chevron.down")
-                                        .font(.system(size: 10))
-                                }
-                                .font(.caption.weight(.medium))
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 3)
-                                .background(Color(UIColor.tertiarySystemFill))
-                                .foregroundColor(.primary)
-                                .clipShape(Capsule())
+                    TextField("Location (optional)", text: $destination.location)
+                        .font(.caption)
+                        .textFieldStyle(.roundedBorder)
+
+                    TextField("Notes (optional)", text: $destination.notes)
+                        .font(.caption)
+                        .textFieldStyle(.roundedBorder)
+
+                    Menu {
+                        ForEach(purposes, id: \.self) { purpose in
+                            Button(purpose) {
+                                destination.purpose = purpose
+                                saveChanges()
                             }
-                        } else {
-                            Text(destination.purpose)
-                                .font(.caption.weight(.medium))
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 3)
-                                .background(Color.blue)
-                                .foregroundColor(.white)
-                                .clipShape(Capsule())
                         }
+                    } label: {
+                        Label(destination.purpose.isEmpty ? "Select Purpose" : destination.purpose, systemImage: "tag")
+                            .font(.caption.weight(.medium))
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.blue)
+                } else {
+                    HStack(spacing: 8) {
+                        Text(destination.name)
+                            .font(.subheadline.weight(.medium))
+                            .foregroundColor(.primary)
+                            .strikethrough(destination.isChecked, color: .secondary)
+                            .opacity(destination.isChecked ? 0.5 : 1)
+
+                        Text(destination.purpose)
+                            .font(.caption2.weight(.medium))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .clipShape(Capsule())
                     }
 
-                    HStack(spacing: 6) {
-                        chip("\(destination.stops.count) Stop")
-                        chip(totalBudget == 0 ? "Rp 0" : Formatters.rupiahShort(totalBudget))
+                    if !destination.location.isEmpty {
+                        Text(destination.location)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .lineLimit(1)
+                    }
+
+                    Text(destination.notes.isEmpty ? "-" : destination.notes)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .strikethrough(destination.isChecked, color: .secondary)
+                        .opacity(destination.isChecked ? 0.5 : 1)
+                        .lineLimit(1)
+                }
+            }
+
+            Spacer(minLength: 8)
+
+            VStack(alignment: .trailing, spacing: 4) {
+                if isEditing {
+                    DatePicker("", selection: $destination.time, displayedComponents: .hourAndMinute)
+                        .labelsHidden()
+                        .datePickerStyle(.compact)
+                        .onChange(of: destination.time) { _, _ in saveChanges() }
+
+                    HStack(spacing: 2) {
+                        Text("Rp")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                        TextField("Budget", value: $destination.budget, format: .number)
+                            .keyboardType(.numberPad)
+                            .font(.caption2)
+                            .frame(width: 60)
+                            .multilineTextAlignment(.trailing)
+                            .textFieldStyle(.roundedBorder)
+                    }
+                } else {
+                    Text(destination.time.formatted(date: .omitted, time: .shortened))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+
+                    if destination.budget > 0 {
+                        Text(Formatters.rupiahShort(destination.budget))
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color(UIColor.tertiarySystemFill))
+                            .clipShape(Capsule())
                     }
                 }
             }
-            .buttonStyle(.plain)
+        }
+    }
 
-            Spacer()
-
+    private var editControls: some View {
+        Group {
             if isEditing {
-                HStack(spacing: 8) {
+                VStack(spacing: 8) {
                     Button {
                         showDeleteConfirmation = true
                     } label: {
                         Image(systemName: "trash.fill")
-                            .font(.subheadline)
+                            .font(.caption)
                             .foregroundColor(.white)
-                            .frame(width: 32, height: 32)
+                            .frame(width: 28, height: 28)
                             .background(Color.red)
                             .clipShape(Circle())
                     }
 
                     Button {
+                        saveChanges()
                         withAnimation(.snappy(duration: 0.2)) {
                             isEditing = false
                         }
                     } label: {
                         Image(systemName: "checkmark")
-                            .font(.subheadline.weight(.bold))
+                            .font(.caption.weight(.bold))
                             .foregroundColor(.white)
-                            .frame(width: 32, height: 32)
+                            .frame(width: 28, height: 28)
                             .background(Color.blue)
                             .clipShape(Circle())
-                            .buttonStyle(.borderedProminent)
                     }
                 }
+                .buttonStyle(.plain)
                 .transition(.scale.combined(with: .opacity))
             } else {
                 Button {
                     withAnimation(.snappy(duration: 0.2)) {
                         isEditing = true
-                        isExpanded = true
                     }
                 } label: {
                     Image(systemName: "square.and.pencil")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                         .frame(width: 32, height: 32)
-//                        .background(Color(UIColor.tertiarySystemFill))
-                        .clipShape(Circle())
                 }
+                .buttonStyle(.plain)
                 .transition(.scale.combined(with: .opacity))
             }
         }
-        .animation(.snappy(duration: 0.2), value: isEditing)
     }
 
-    private func chip(_ text: String) -> some View {
-        Text(text)
-            .font(.caption2)
-            .foregroundColor(.secondary)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 4)
-            .background(Color(UIColor.tertiarySystemFill))
-            .clipShape(Capsule())
+    private func saveChanges() {
+        try? modelContext.save()
+        NotificationManager.shared.cancelDestinationReminder(for: destination)
+        NotificationManager.shared.scheduleDestinationReminder(for: destination)
+        if let outing = destination.outing {
+            NotificationManager.shared.cancelOutingReminder(for: outing)
+            NotificationManager.shared.scheduleOutingReminder(for: outing)
+        }
     }
 }
 
 #Preview {
-    let destination = Destination(name: "Blok M Square", purpose: "Mall")
-    let stop1 = Stops(name: "Bakmi GM", time: Date(), location: "Lantai 2", notes: "Beli Bakmi goreng spesial", budget: 60_000)
-    stop1.isChecked = true
-    let stop2 = Stops(name: "Gramedia", time: Date().addingTimeInterval(7_200), location: "Lantai 3", notes: "Beli buku tereliye", budget: 90_000)
-    let stop3 = Stops(name: "J.CO Donuts", time: Date().addingTimeInterval(14_400), location: "Lantai 1", notes: "", budget: 50_000)
-    destination.stops = [stop1, stop2, stop3]
+    let destination = Destination(
+        name: "Blok M Square",
+        purpose: "Mall",
+        time: Date(),
+        location: "Lantai 2",
+        notes: "Beli makan siang",
+        budget: 60_000
+    )
 
     return DestinationCard(
         destination: destination,
-        onToggleStopChecked: { _ in },
-        onDeleteStop: { _ in },
-        onAddStop: {},
+        onToggleChecked: {},
         onDeleteDestination: {}
     )
     .padding()
