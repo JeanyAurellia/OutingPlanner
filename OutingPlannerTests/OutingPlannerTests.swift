@@ -6,8 +6,8 @@
 //
 
 import Foundation
+import PlacesKit
 import Testing
-@testable import OutingPlanner
 
 @Test
 @MainActor
@@ -16,7 +16,7 @@ func recommendationReturnsPlaces() async throws {
         ProcessInfo.processInfo.environment["GEOAPIFY_API_KEY"]
     )
 
-    let service = GeoapifyPlaceService(apiKey: apiKey)
+    let service = PlacesKit.GeoapifyPlaceService(apiKey: apiKey)
 
     let results = try await service.recommendPlaces(
         latitude: -6.2088,

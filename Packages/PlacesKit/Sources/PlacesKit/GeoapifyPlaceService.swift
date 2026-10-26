@@ -1,17 +1,13 @@
-//
-//  GeopifyPlaceService.swift
-//  OutingPlanner
-//
-//  Created by Jeany Aurellia on 25/10/26.
-//
-
 import Foundation
 
-struct GeoapifyPlaceService: Sendable {
-    let apiKey: String
+public struct GeoapifyPlaceService: Sendable {
+    private let apiKey: String
 
-    // Mencari tempat tertentu
-    func searchPlaces(query: String) async throws -> [PlaceResult]{
+    public init(apiKey: String) {
+        self.apiKey = apiKey
+    }
+
+    public func searchPlaces(query: String) async throws -> [PlaceResult] {
         let cleanQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard !cleanQuery.isEmpty else {
@@ -19,30 +15,18 @@ struct GeoapifyPlaceService: Sendable {
         }
 
         guard var components = URLComponents(
-            string: "https://api.geoapify.com/v1/geocode/search")
-        else {
+            string: "https://api.geoapify.com/v1/geocode/search"
+        ) else {
             throw URLError(.badURL)
         }
 
         components.queryItems = [
-            URLQueryItem(
-                name: "text", value: cleanQuery
-            ),
-            URLQueryItem(
-                name: "format", value: "geojson"
-            ),
-            URLQueryItem(
-                name: "limit", value: "10"
-            ),
-            URLQueryItem(
-                name: "lang", value: "id"
-            ),
-            URLQueryItem(
-                name: "filter", value: "countrycode:id"
-            ),
-            URLQueryItem(
-                name: "apiKey", value: apiKey
-            )
+            URLQueryItem(name: "text", value: cleanQuery),
+            URLQueryItem(name: "format", value: "geojson"),
+            URLQueryItem(name: "limit", value: "10"),
+            URLQueryItem(name: "lang", value: "id"),
+            URLQueryItem(name: "filter", value: "countrycode:id"),
+            URLQueryItem(name: "apiKey", value: apiKey)
         ]
 
         guard let url = components.url else {
@@ -52,16 +36,14 @@ struct GeoapifyPlaceService: Sendable {
         return try await fetchPlaces(from: url)
     }
 
-    //Rekomendasi tempat di sekitar
-    func recommendPlaces(
+    public func recommendPlaces(
         latitude: Double,
         longitude: Double,
         radius: Int
     ) async throws -> [PlaceResult] {
-
         guard var components = URLComponents(
-            string: "https://api.geoapify.com/v2/places")
-        else {
+            string: "https://api.geoapify.com/v2/places"
+        ) else {
             throw URLError(.badURL)
         }
 
@@ -97,12 +79,16 @@ struct GeoapifyPlaceService: Sendable {
             throw URLError(.badServerResponse)
         }
 
-        let decodedResponse = try JSONDecoder().decode(
+        return try Self.decodePlaces(from: data)
+    }
+
+    static func decodePlaces(from data: Data) throws -> [PlaceResult] {
+        let response = try JSONDecoder().decode(
             GeoapifyResponse.self,
             from: data
         )
 
-        return decodedResponse.features.map { feature in
+        return response.features.map { feature in
             let properties = feature.properties
 
             return PlaceResult(

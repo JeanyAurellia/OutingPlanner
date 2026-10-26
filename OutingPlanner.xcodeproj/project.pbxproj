@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		4E6BC415308E01B600345661 /* OutingPlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E6BC412308E01B600345661 /* OutingPlannerTests.swift */; };
+		A10000000000000000000001 /* PlacesKit in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000004 /* PlacesKit */; };
+		A10000000000000000000002 /* PlacesKit in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000005 /* PlacesKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -29,7 +31,7 @@
 
 /* Begin PBXFileReference section */
 		4E6BC412308E01B600345661 /* OutingPlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutingPlannerTests.swift; sourceTree = "<group>"; };
-		4E6BC416308E323200345661 /* OutingPlanner.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = file; path = OutingPlanner.xctestplan; sourceTree = "<group>"; };
+		4E6BC416308E323200345661 /* OutingPlanner.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = OutingPlanner.xctestplan; sourceTree = "<group>"; };
 		4E728D972FE2D5A7005E4D50 /* OutingPlanner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OutingPlanner.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4E728DA62FE2D5A8005E4D50 /* OutingPlannerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OutingPlannerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4E728DB02FE2D5A8005E4D50 /* OutingPlannerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OutingPlannerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -48,6 +50,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A10000000000000000000001 /* PlacesKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -55,6 +58,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A10000000000000000000002 /* PlacesKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -116,6 +120,7 @@
 			);
 			name = OutingPlanner;
 			packageProductDependencies = (
+				A10000000000000000000004 /* PlacesKit */,
 			);
 			productName = OutingPlanner;
 			productReference = 4E728D972FE2D5A7005E4D50 /* OutingPlanner.app */;
@@ -136,6 +141,7 @@
 			);
 			name = OutingPlannerTests;
 			packageProductDependencies = (
+				A10000000000000000000005 /* PlacesKit */,
 			);
 			productName = OutingPlannerTests;
 			productReference = 4E728DA62FE2D5A8005E4D50 /* OutingPlannerTests.xctest */;
@@ -193,6 +199,9 @@
 			);
 			mainGroup = 4E728D8E2FE2D5A7005E4D50;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				A10000000000000000000003 /* XCLocalSwiftPackageReference "Packages/PlacesKit" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4E728D982FE2D5A7005E4D50 /* Products */;
 			projectDirPath = "";
@@ -583,6 +592,26 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		A10000000000000000000003 /* XCLocalSwiftPackageReference "Packages/PlacesKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PlacesKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A10000000000000000000004 /* PlacesKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A10000000000000000000003 /* XCLocalSwiftPackageReference "Packages/PlacesKit" */;
+			productName = PlacesKit;
+		};
+		A10000000000000000000005 /* PlacesKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A10000000000000000000003 /* XCLocalSwiftPackageReference "Packages/PlacesKit" */;
+			productName = PlacesKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 4E728D8F2FE2D5A7005E4D50 /* Project object */;
 }

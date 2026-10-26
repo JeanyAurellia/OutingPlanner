@@ -5,17 +5,21 @@
 
 import SwiftUI
 import SwiftData
+import PlacesKit
 
 struct AddDestinationView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
     @Bindable var outing: Outing
-    @State private var selectedPlace: PlaceResult?
+    @State private var selectedPlace: PlacesKit.PlaceResult?
     @State private var showPlacePicker = false
     @State private var selectedTime = Date()
     @State private var budgetText = ""
     @State private var notes = ""
+
+    private let geoapifyAPIKey =
+        ProcessInfo.processInfo.environment["GEOAPIFY_API_KEY"] ?? ""
 
     private func purpose(from categories: [String]) -> String {
         if categories.contains(where: { $0.contains("catering") }) {
@@ -142,7 +146,7 @@ struct AddDestinationView: View {
                 }
             }
             .sheet(isPresented: $showPlacePicker) {
-                PlacePickerView { place in
+                PlacesKit.PlacePickerView(apiKey: geoapifyAPIKey) { place in
                     selectedPlace = place
                     showPlacePicker = false
                 }

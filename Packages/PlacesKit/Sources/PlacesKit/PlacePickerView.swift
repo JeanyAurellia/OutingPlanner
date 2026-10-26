@@ -1,32 +1,22 @@
-//
-//  PlacePickerView.swift
-//  OutingPlanner
-//
-//  Created by Jeany Aurellia on 25/10/26.
-//
-
 import SwiftUI
 
-struct PlacePickerView: View {
+public struct PlacePickerView: View {
     @State private var viewModel: PlaceSearchViewModel
     private let onSelect: (PlaceResult) -> Void
 
-    init(
+    public init(
+        apiKey: String,
         onSelect: @escaping (PlaceResult) -> Void = { _ in }
     ) {
         self.onSelect = onSelect
 
-        let apiKey =
-            ProcessInfo.processInfo.environment["GEOAPIFY_API_KEY"] ?? ""
-
         let service = GeoapifyPlaceService(apiKey: apiKey)
-
         _viewModel = State(
             initialValue: PlaceSearchViewModel(service: service)
         )
     }
 
-    var body: some View {
+    public var body: some View {
         NavigationStack {
             List(viewModel.places) { place in
                 Button {
@@ -66,4 +56,5 @@ struct PlacePickerView: View {
                 }
             }
         }
-    }}
+    }
+}

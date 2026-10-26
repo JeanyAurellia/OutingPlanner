@@ -90,30 +90,27 @@ The codebase follows a feature-oriented structure:
 
 ```text
 OutingPlanner/
-├── App/                         # App entry point and root tab navigation
-├── Core/Helpers/                # Color and date/currency formatting helpers
-├── Features/
-│   ├── Outings/
-│   │   ├── Models/              # Outing, Destination, and outing checklist models
-│   │   ├── Repositories/        # Outing persistence and reminder coordination
-│   │   └── Views/               # Lists, forms, details, and attachment sheet
-│   ├── Belonging/
-│   │   ├── Models/              # Reusable list and item models
-│   │   ├── Repositories/        # Belonging-list persistence operations
-│   │   └── Views/               # Template list and item management
-│   ├── Calendar/Views/          # Monthly calendar and event cards
-│   ├── Places/
-│   │   ├── Models/              # Place results and Geoapify response models
-│   │   ├── Repositories/        # Favorite-place persistence scaffold
-│   │   ├── Services/            # Geoapify search and recommendation requests
-│   │   ├── ViewModels/          # Search, loading, and error state
-│   │   └── Views/               # Place picker and in-progress place views
-│   └── Settings/
-│       ├── Managers/            # Local notification scheduling
-│       └── Views/               # Notification and checklist settings
-├── Resources/                   # App icon and asset catalog
-└── Shared/Components/           # Reusable buttons and cards
+├── Packages/PlacesKit/
+│   ├── Sources/PlacesKit/       # Place models, Geoapify service, state, and picker UI
+│   └── Tests/PlacesKitTests/    # JSON decoding tests without network access
+└── OutingPlanner/
+    ├── App/                     # App entry point and root tab navigation
+    ├── Core/Helpers/            # Color and date/currency formatting helpers
+    ├── Features/
+    │   ├── Outings/             # Outing models, persistence, and views
+    │   ├── Belonging/           # Reusable checklist models and views
+    │   ├── Calendar/Views/      # Monthly calendar and event cards
+    │   ├── Places/              # App-specific favorite/recommendation scaffolds
+    │   └── Settings/            # Notifications and checklist settings
+    ├── Resources/               # App icon and asset catalog
+    └── Shared/Components/       # Reusable buttons and cards
 ```
+
+### Local `PlacesKit` package
+
+`PlacesKit` owns the reusable place-search boundary: API response models, Geoapify requests, observable search state, and the place-picker view. The package does not depend on `Outing`, `Destination`, or SwiftData.
+
+The application imports `PlacesKit`, reads the development API key, and passes it into the picker. After the user selects a result, the application converts that result into its own persisted `Destination` model. This keeps API code reusable without moving app-specific persistence into the package.
 
 ## 🗃️ Data Model
 
@@ -129,7 +126,7 @@ OutingPlanner uses SwiftData for on-device persistence.
 
 `Outing` owns its destinations and outing-specific belonging items with cascade deletion. `BelongingList` similarly owns its reusable items.
 
-`PlaceResult` is a transient API result rather than a SwiftData model. When a user selects a place, the app copies its name, address, and derived purpose into a `Destination` alongside the schedule entered in the form.
+`PlaceResult` belongs to the local `PlacesKit` package and is a transient API result rather than a SwiftData model. When a user selects a place, the app copies its name, address, and derived purpose into a `Destination` alongside the schedule entered in the form.
 
 ## 🛠️ Technology Stack
 
@@ -139,6 +136,7 @@ OutingPlanner uses SwiftData for on-device persistence.
 - **Persistence:** SwiftData
 - **Networking:** URLSession and async/await
 - **Places data:** Geoapify Geocoding and Places APIs
+- **Modularization:** Local Swift Package (`PlacesKit`)
 - **Notifications:** UserNotifications
 - **Testing:** Swift Testing and XCTest/XCUITest
 - **IDE:** Xcode
@@ -165,7 +163,7 @@ OutingPlanner uses SwiftData for on-device persistence.
 7. Press **Run** (`⌘R`).
 8. Allow notifications when prompted if you want outing and destination reminders.
 
-No package installation is required. Keep the API key out of Swift source files and do not commit it to the repository.
+Xcode resolves `Packages/PlacesKit` directly from this repository, so no package download or separate installation is required. Keep the API key out of Swift source files and do not commit it to the repository.
 
 ## 📖 How to Use
 
@@ -207,7 +205,15 @@ xcodebuild \
   test
 ```
 
-Replace the simulator name with one installed on your machine. The Geoapify integration test requires `GEOAPIFY_API_KEY` in the active test-plan environment. The current unit test calls the recommendation endpoint and verifies that it returns at least one place. UI test files are still mostly scaffolding.
+Replace the simulator name with one installed on your machine. The app test target contains a Geoapify integration test that requires `GEOAPIFY_API_KEY` in the active test-plan environment. It calls the recommendation endpoint and verifies that at least one place is returned. UI test files are still mostly scaffolding.
+
+Run the local package tests without an API key:
+
+```bash
+swift test --package-path Packages/PlacesKit
+```
+
+These package tests verify both the singular `category` returned by Geocoding and the `categories` array returned by the Places API using local JSON fixtures.
 
 ## 🔐 Persistence and Privacy
 
