@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		4E6BC415308E01B600345661 /* OutingPlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E6BC412308E01B600345661 /* OutingPlannerTests.swift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		4E728DA72FE2D5A8005E4D50 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -24,6 +28,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		4E6BC412308E01B600345661 /* OutingPlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutingPlannerTests.swift; sourceTree = "<group>"; };
+		4E6BC416308E323200345661 /* OutingPlanner.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = file; path = OutingPlanner.xctestplan; sourceTree = "<group>"; };
 		4E728D972FE2D5A7005E4D50 /* OutingPlanner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OutingPlanner.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4E728DA62FE2D5A8005E4D50 /* OutingPlannerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OutingPlannerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4E728DB02FE2D5A8005E4D50 /* OutingPlannerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OutingPlannerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -62,9 +68,19 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		4E6BC413308E01B600345661 /* OutingPlannerTests */ = {
+			isa = PBXGroup;
+			children = (
+				4E6BC412308E01B600345661 /* OutingPlannerTests.swift */,
+			);
+			path = OutingPlannerTests;
+			sourceTree = "<group>";
+		};
 		4E728D8E2FE2D5A7005E4D50 = {
 			isa = PBXGroup;
 			children = (
+				4E6BC416308E323200345661 /* OutingPlanner.xctestplan */,
+				4E6BC413308E01B600345661 /* OutingPlannerTests */,
 				4E728D992FE2D5A7005E4D50 /* OutingPlanner */,
 				4E728D982FE2D5A7005E4D50 /* Products */,
 			);
@@ -153,7 +169,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2650;
-				LastUpgradeCheck = 2650;
+				LastUpgradeCheck = 2660;
 				TargetAttributes = {
 					4E728D962FE2D5A7005E4D50 = {
 						CreatedOnToolsVersion = 26.5;
@@ -225,6 +241,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4E6BC415308E01B600345661 /* OutingPlannerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -310,6 +327,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -367,6 +385,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -377,6 +396,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = B756M5W2CA;
@@ -394,6 +414,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.academy.rea.OutingPlanner;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -409,6 +430,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = B756M5W2CA;
@@ -426,6 +448,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.academy.rea.OutingPlanner;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;

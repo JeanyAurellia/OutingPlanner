@@ -1,0 +1,44 @@
+{
+  "configurations" : [
+    {
+      "id" : "16847343-9424-4E7B-9E55-A91B97306F52",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "environmentVariableEntries" : [
+      {
+        "key" : "GEOAPIFY_API_KEY",
+        "value" : ""
+      }
+    ],
+    "performanceAntipatternCheckerEnabled" : true,
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:OutingPlanner.xcodeproj",
+      "identifier" : "4E728DA52FE2D5A8005E4D50",
+      "name" : "OutingPlannerTests"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:OutingPlanner.xcodeproj",
+        "identifier" : "4E728DA52FE2D5A8005E4D50",
+        "name" : "OutingPlannerTests"
+      }
+    },
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:OutingPlanner.xcodeproj",
+        "identifier" : "4E728DAF2FE2D5A8005E4D50",
+        "name" : "OutingPlannerUITests"
+      }
+    }
+  ],
+  "version" : 1
+}

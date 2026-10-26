@@ -5,15 +5,37 @@
 //  Created by Jeany Aurellia on 17/06/26.
 //
 
+import Foundation
 import Testing
 @testable import OutingPlanner
 
-struct OutingPlannerTests {
+@Test
+@MainActor
+func recommendationReturnsPlaces() async throws {
+    let apiKey = try #require(
+        ProcessInfo.processInfo.environment["GEOAPIFY_API_KEY"]
+    )
 
-    @Test func example() async throws {
-        // Write your test here and use APIs like `#expect(...)` to check expected conditions.
-        // Swift Testing Documentation
-        // https://developer.apple.com/documentation/testing
+    let service = GeoapifyPlaceService(apiKey: apiKey)
+
+    let results = try await service.recommendPlaces(
+        latitude: -6.2088,
+        longitude: 106.8456,
+        radius: 5_000
+    )
+
+    for place in results {
+        print("""
+        Nama: \(place.name)
+        Alamat: \(place.address)
+        Koordinat: \(place.latitude), \(place.longitude)
+        Kategori: \(place.categories)
+        ---
+        """)
+
     }
 
+    dump(results)
+
+    #expect(!results.isEmpty)
 }
